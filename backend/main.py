@@ -1,9 +1,19 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import chess
 import chess.engine
 from pydantic import BaseModel
 
 app = FastAPI()
+
+# CORS 미들웨어 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 STOCKFISH_PATH = "/usr/games/stockfish"
 engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
