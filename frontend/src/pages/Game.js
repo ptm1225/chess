@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Chess from 'chess.js';
+import './css/Game.css';
 
 function App() {
   const [rating, setRating] = useState(1500); // 기본 레이팅
