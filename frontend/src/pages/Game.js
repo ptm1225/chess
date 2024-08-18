@@ -3,9 +3,10 @@ import Chess from 'chess.js';
 import './css/Game.css';
 
 function App() {
-  const [rating, setRating] = useState(1500); // 기본 레이팅
+  const [rating, setRating] = useState(1500);
   const [gameStarted, setGameStarted] = useState(false);
   const [game, setGame] = useState(new Chess());
+  const [playerColor, setPlayerColor] = useState('white');
   const boardRef = useRef(null);
 
   const startGame = () => {
@@ -14,15 +15,20 @@ function App() {
 
   useEffect(() => {
     if (gameStarted) {
-      // DOM이 업데이트된 후 체스보드를 초기화
+      
       boardRef.current = window.Chessboard('board', {
         draggable: true,
-        position: 'start',
+        position: playerColor === 'white' ? 'start' : 'flip',
         pieceTheme: 'chesspieces/wikipedia/{piece}.png',
         onDrop: handleMove
       });
+
+      if (playerColor === 'black') {
+        boardRef.current.flip();
+        makeAIMove();
+      }
     }
-  }, [gameStarted]); // gameStarted 상태가 변경될 때마다 이 useEffect가 실행됨
+  }, [gameStarted]);
 
   const handleMove = (source, target) => {
     const move = game.move({
@@ -47,8 +53,8 @@ function App() {
         },
         body: JSON.stringify({
           fen: fen,
-          depth: 10,  // 깊이는 고정
-          rating: rating  // 사용자 설정 레이팅 전달
+          depth: 10,
+          rating: rating
         })
       });
 
@@ -94,6 +100,26 @@ function App() {
             />
             {rating}
           </label>
+          <div>
+            <label>
+              <input
+                type="radio"
+                value="white"
+                checked={playerColor === 'white'}
+                onChange={() => setPlayerColor('white')}
+              />
+              White
+            </label>
+            <label>
+              <input
+                type="radio"
+                value="black"
+                checked={playerColor === 'black'}
+                onChange={() => setPlayerColor('black')}
+              />
+              Black
+            </label>
+          </div>
           <button onClick={startGame}>Start Game</button>
         </div>
       ) : (
