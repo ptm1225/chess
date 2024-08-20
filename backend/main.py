@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import chess
 import chess.engine
-from pydantic import BaseModel
+from manager import ConnectionManager
 
 app = FastAPI()
 
@@ -17,13 +18,14 @@ app.add_middleware(
 
 STOCKFISH_PATH = "/usr/games/stockfish"
 engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
+manager = ConnectionManager()
 
 class MoveRequest(BaseModel):
-    fen: str  # 현재 체스 보드 상태를 FEN(Forsyth-Edwards Notation)으로 전달
-    depth: int = 20  # 엔진이 분석할 깊이
-    rating: int = 1500  # 사용자 설정 레이팅
+    fen: str
+    depth: int = 20
+    rating: int = 1500
 
-def calculate_skill_level(rating: int) -> int:
+def calculate_skill_level(rating) -> int:
     if rating < 800:
         return 0
     elif rating > 2600:
@@ -40,6 +42,16 @@ async def get_next_move(request: MoveRequest):
     
     result = engine.play(board, chess.engine.Limit(depth=request.depth))
     return {"best_move": result.move.uci()}
+
+@app.websocket("/ws/chess/{match_id}")
+async def websocket_endpoint(websocket: WebSocket, match_id: str):
+    await manager.connect(websocket, match_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await manager.broadcast(data, match_id)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, match_id)
 
 @app.on_event("shutdown")
 def shutdown_event():

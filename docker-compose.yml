@@ -7,9 +7,20 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    networks:
+      - mynetwork
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge
